@@ -22,6 +22,8 @@
 #include "fsemu-widget.h"
 #include "fsemu-window.h"
 
+#include "upscaler.h"
+
 // ----------------------------------------------------------------------------
 
 #define FSEMU_OPENGL_SHOW_TEXT_DEBUG_RECTANGLE 0
@@ -94,6 +96,12 @@ void fsemu_glvideo_set_size_2(int width, int height)
     fsemu_video_set_drawable_size(&fsemu_glvideo.drawable_size);
 }
 
+// static long long current_time_ms() {
+//     struct timespec ts;
+//     clock_gettime(CLOCK_MONOTONIC, &ts);
+//     return (long long)ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
+// }
+
 static void fsemu_glvideo_handle_frame(fsemu_video_frame_t *frame)
 {
     if (frame->dummy) {
@@ -136,6 +144,20 @@ static void fsemu_glvideo_handle_frame(fsemu_video_frame_t *frame)
             }
         }
     }
+
+    // Time reporting
+    // static long long last_time = 0;
+    // long long nnow = current_time_ms();
+    // if (last_time != 0) {
+    //     long long delta = nnow - last_time;
+    //     printf("Loop iteration took %lld ms\n", delta);
+    // }
+    // last_time = nnow;
+
+    static uint8_t local_buffer[752 * 756 * 4];
+    run_inference(frame->buffer, local_buffer, frame->limits.x, frame->limits.y, frame->limits.w, frame->limits.h);
+    frame->buffer = local_buffer;
+
     frame->buffer += (frame->limits.y * frame->stride) +
                      frame->limits.x * fsemu_glvideo.bpp;
     frame->width = frame->limits.w;
@@ -1472,6 +1494,7 @@ static void *fsemu_vsyncthread_entry(void *data)
 
 void fsemu_glvideo_init(void)
 {
+    printf("Using OpenGL\n");
     fsemu_return_if_already_initialized();
     // fsemu_opengl_init();
     fsemu_video_log("Initializing OpenGL video renderer\n");

@@ -274,3 +274,31 @@ Some relevant links:
 - http://www.winuae.net/
 - http://www.rcdrummond.net/uae/
 - http://www.softpres.org/
+
+# AI UPSCALER
+
+This branch is a modification of the vanilla FS-UAE with the addition of an AI image upscaler for lores/laced images to make maximum use of the 752x576 frame buffer.
+In lo-resolution the emulator normally uses 2x2 framebuffer pixels to simulate one Amiga pixel.
+
+I trained some very simple models to upscale those lores, lores/laced or hires images to enhance the image resolution wise.
+The models are very basic, for the following reasons:
+-  The AI runtime engine is ONNX. I could not make it blend cleanly with the OpenGL render engine.
+   The Amiga framebuffer resides in CPU memory; this needs to be copied to the GPU.
+   To get good performance the output of the AI model should be fed directly to the OpenGL pipeline to avoid copying over the PCIe bus.
+   On my system I see a 2ms delay just for the copy.
+-  As the models need to run real-time, with above mentioned constrained, the training focussed more on enhancing edges in the images than
+   to enhance colour. As such, an A500 OCS image will not start looking like an A1200 AGA image.
+
+Developed and only tested on:
+- AMD Threadripper Ryzen 1950X
+- AMD RT 6900 XT GPU (RDNA2)
+- Ubuntu 24.01 LTS
+
+Models:
+- conv3: a very basic 3 layer convolution model with ReLU as activation function
+- conv3_heavy: same as conv3 but with more channels
+
+If you want to try the different models, change the load_model parameter in file src/fsuae/fsuae-main.c
+
+Note: there is a frame dumper for raw frames also in the code (src/of-fs/fsvideo.c).
+Enable to flag to dump frames to disk.

@@ -303,7 +303,8 @@ static int bitplane_line_crossing;
 
 static struct color_entry current_colors;
 uae_u16 bplcon0;
-static uae_u16 bplcon1, bplcon2, bplcon3, bplcon4;
+static uae_u16 bplcon1, bplcon2, bplcon4;
+uae_u16 bplcon3;
 static int bplcon0d, bplcon0d_old;
 static uae_u32 bplcon0_res, bplcon0_planes, bplcon0_planes_limit;
 static int bplcon0_res_hr;

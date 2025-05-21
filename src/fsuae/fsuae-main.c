@@ -67,6 +67,8 @@
 #include "fsemu-video.h"
 #include "fsemu-window.h"
 
+#include "upscaler.h"
+
 #ifdef LINUX
 #include "../../fsemu/gamemode/lib/gamemode_client.h"
 #endif
@@ -2143,6 +2145,10 @@ int main(int argc, char *argv[])
     fs_uae_configure_menu();
 #endif
 
+    // Load AI upscale model
+    load_model("upscaler/conv3_heavy.onnx");
+
+
     if (fsemu) {
         fsuae_inputport_init();
         fsuae_keyboard_init();
@@ -2221,6 +2227,8 @@ int main(int argc, char *argv[])
         main_loop();
         amiga_quit();
     }
+
+    cleanup_model();
 
     fsuae_log("fs-uae shutting down, fs_emu_run returned\n");
     if (g_rmdir(fsuae_path_state_dir()) == 0) {

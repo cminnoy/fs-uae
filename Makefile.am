@@ -205,6 +205,16 @@ fs_uae_device_helper_SOURCES = \
 
 fs_uae_device_helper_LDADD =
 
+# Use pkg-config to get onnxruntime flags
+ONNXRUNTIME_CFLAGS = $(shell pkg-config --cflags libonnxruntime)
+ONNXRUNTIME_LIBS = $(shell pkg-config --libs libonnxruntime)
+
+# Add the flags to the compiler and linker
+AM_CPPFLAGS += $(ONNXRUNTIME_CFLAGS)
+LIBS += $(ONNXRUNTIME_LIBS)
+LIBS += -lstdc++ -fopenmp -L/opt/rocm/lib -lhsa-runtime64 -lamdhip64
+AM_CPPFLAGS += -fopenmp  -I/opt/rocm/include
+
 noinst_LIBRARIES += libuae.a
 AM_CPPFLAGS += -I$(s)/flac/include
 AM_CPPFLAGS += -I$(b)/gen
@@ -215,6 +225,8 @@ AM_CPPFLAGS += -I$(s)/src/od-fs
 AM_CPPFLAGS += -I$(s)/src/od-fs/include
 AM_CPPFLAGS += -I$(s)/src/od-win32
 AM_CPPFLAGS += -I$(s)/src/od-win32/caps
+AM_CPPFLAGS += -I$(s)/upscaler
+
 fs_uae_LDADD += libuae.a
 # libuae_a_CXXFLAGS = $(CM_CFLAGS) -fpermissive
 libuae_a_SOURCES = \
@@ -821,7 +833,7 @@ libfsemu_a_SOURCES = \
 if FSEMU
 
 noinst_LIBRARIES += libfsemu2.a
- AM_CPPFLAGS += -I$(s)/fsemu/src
+AM_CPPFLAGS += -I$(s)/fsemu/src
 fs_uae_LDADD += libfsemu2.a
 fs_uae_device_helper_LDADD += libfsemu2.a
 libfsemu2_a_SOURCES = \
@@ -1052,6 +1064,14 @@ else
 fsemu-data:
 
 endif
+
+noinst_LIBRARIES += libupscaler.a
+libupscaler_a_SOURCES = \
+	upscaler/upscaler.cpp \
+	upscaler/upscaler.h
+libupscaler_a_CXXFLAGS = -fvisibility=default
+fs_uae_LDADD += libupscaler.a
+fs_uae_device_helper_LDADD += libupscaler.a
 
 if BUILTIN_CEF
 AM_CPPFLAGS += -I$(s)/cef
