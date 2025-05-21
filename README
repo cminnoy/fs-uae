@@ -287,9 +287,9 @@ The models are very basic, for the following reasons:
    To get good performance the output of the AI model should be fed directly to the OpenGL pipeline to avoid copying over the PCIe bus.
    On my system I see a 2ms delay just for the copy.
 -  As the models need to run real-time, with above mentioned constrained, the training focussed more on enhancing edges in the images than
-   to enhance colour. As such, an A500 OCS image will not start looking like an A1200 AGA image.
+   to enhance colour. As such, an A500 OCS image will not start looking like an A1200 AGA image :-(
 
-Developed and only tested on:
+Developed and 'only' tested on:
 - AMD Threadripper Ryzen 1950X
 - AMD RT 6900 XT GPU (RDNA2)
 - Ubuntu 24.01 LTS
@@ -300,5 +300,15 @@ Models:
 
 If you want to try the different models, change the load_model parameter in file src/fsuae/fsuae-main.c
 
-Note: there is a frame dumper for raw frames also in the code (src/of-fs/fsvideo.c).
+See my github on the AI models: https://github.com/cminnoy/fs_uae_image_enhancer_project
+
+Note: there is a frame dumper for raw frames also in the code (src/od-fs/fsvideo.c).
 Enable to flag to dump frames to disk.
+
+To compile on Linux:
+./bootstrap
+./configure
+make
+
+Make sure you have this right ONNX Runtime for your system.
+For AMD you will need to have ROCm installed and compile ONNX runtime from source.
