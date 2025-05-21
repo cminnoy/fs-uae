@@ -13,6 +13,179 @@
 #include "win32gfx.h"
 #include "xwin.h"
 
+#include "uae.h"
+#include "options.h"
+#include "custom.h"
+
+ #include <cstdint>
+ #include <array>
+
+
+// We need access to bplcon registers to be able to detect the Amiga screen mode
+extern uae_u16 bplcon0;
+extern uae_u16 bplcon3;
+namespace {
+
+bool          dump_frame_to_disk = false; //!< If \b true amiga framebuffer frames will be dumped to disk in RGB raw format (8 bits per channel; 752x576)     
+std::uint32_t dump_frequency = 100; //!< Write every so many frames to disk.
+std::int32_t  dump_max_frames = 1000; //!< Dump n frames max; n<0 means no maximum
+std::uint32_t dump_counter = 0;
+
+// Function to convert the framebuffer to RGB format
+void convert_to_rgb_uint8(uint8_t* dest, const uint8_t* src, int width, int height, int bpp, int format) {
+    int pixel_count = width * height;
+    for (int i = 0; i < pixel_count; ++i) {
+        uint8_t r, g, b;
+        switch (format) {
+            case AMIGA_VIDEO_FORMAT_R5G6B5:
+                r = src[1] & 0xF8;
+                g = ((src[1] & 0x07) << 5) | ((src[0] & 0xE0) >> 3);
+                b = (src[0] & 0x1F) << 3;
+                src += 2;
+                break;
+            case AMIGA_VIDEO_FORMAT_R5G5B5A1:
+                r = (src[1] & 0xF8);
+                g = ((src[1] & 0x07) << 5) | ((src[0] & 0xC0) >> 6);
+                b = (src[0] & 0x3E) << 2;
+                src += 2;
+                break;
+            case AMIGA_VIDEO_FORMAT_RGBA:
+                r = src[0];
+                g = src[1];
+                b = src[2];
+                src += 4;
+                break;
+            case AMIGA_VIDEO_FORMAT_BGRA:
+                b = src[0];
+                g = src[1];
+                r = src[2];
+                src += 4;
+                break;
+            default:
+                r = g = b = 0;
+                break;
+        }
+        *dest++ = r;
+        *dest++ = g;
+        *dest++ = b;
+    }
+}
+
+void detect_amiga_mode_and_screen_mode(char* video_mode, char* screen_mode, char* screen_colors) {
+	// Detect PAL or NTSC mode
+	bool is_ntsc = currprefs.ntscmode;
+	strcpy(video_mode, is_ntsc ? "NTSC" : "PAL");
+
+	// Detect screen mode
+	if (currprefs.chipset_mask & CSMASK_ECS_AGNUS) {
+		if (currprefs.chipset_mask & CSMASK_ECS_DENISE) {
+			strcpy(screen_mode, "ECS");
+		} else {
+			strcpy(screen_mode, "OCS");
+		}
+	} else if (currprefs.chipset_mask & CSMASK_AGA) {
+		strcpy(screen_mode, "AGA");
+	} else {
+		strcpy(screen_mode, "Palette");
+	}
+
+	// Detect color depth and special modes
+	int colors = 0;
+	if (currprefs.chipset_mask & CSMASK_AGA) {
+		if (bplcon0 & 0x8000) {
+			strcpy(screen_mode, "HAM8");
+			colors = 262144;
+		} else if (bplcon0 & 0x4000) {
+			strcpy(screen_mode, "HAM6");
+			colors = 4096;
+		} else if (bplcon0 & 0x2000) {
+			strcpy(screen_mode, "Half-Brite");
+			colors = 64;
+		} else {
+			if (currprefs.chipset_mask & CSMASK_AGA) {
+				// Calculate colors based on bplcon0 and bplcon3
+				int planes = (bplcon0 >> 12) & 0x07;
+				int extra_planes = (bplcon3 >> 6) & 0x07;
+				colors = 1 << (planes + extra_planes + 1);
+			} else {
+				colors = 1 << (((bplcon0 >> 12) & 0x07) + 1);
+			}
+		}
+	} else {
+		if (bplcon0 & 0x8000) {
+			strcpy(screen_mode, "HAM");
+			colors = 4096;
+		} else if (bplcon0 & 0x2000) {
+			strcpy(screen_mode, "Half-Brite");
+			colors = 64;
+		} else {
+			colors = 1 << (((bplcon0 >> 12) & 0x07) + 1);
+		}
+	}
+
+	// Detect resolution mode
+	if (bplcon0 & 0x0800) {
+		strcat(screen_mode, " SuperHires");
+	} else if (bplcon0 & 0x0400) {
+		strcat(screen_mode, " Hires");
+	} else {
+		strcat(screen_mode, " Lowres");
+	}
+
+	// Detect laced mode
+	if (bplcon0 & 0x0040) {
+		strcat(screen_mode, " Laced");
+	}
+
+	snprintf(screen_colors, 16, "%d", colors);
+}
+
+// Function to save the framebuffer to a file
+void save_framebuffer_to_file(const char* base_filename, const uint8_t* buffer, int width, int height, int bpp, int format) {
+    char video_mode[16];
+    char screen_mode[16];
+	char screen_colors[16];
+    detect_amiga_mode_and_screen_mode(video_mode, screen_mode, screen_colors);
+
+    char filename[256];
+    snprintf(filename, sizeof(filename), "%s_%s_%s_%s_%dx%d.raw", base_filename, video_mode, screen_mode, screen_colors, width, height);
+
+    // Allocate memory for the RGB buffer (3 bytes per pixel; we ignore alpha)
+    uint8_t* rgb_buffer = (uint8_t*)malloc(width * height * 3);
+    if (!rgb_buffer) {
+        printf("Failed to allocate memory for RGB buffer\n");
+        return;
+    }
+
+    // Convert the buffer to RGB format
+    convert_to_rgb_uint8(rgb_buffer, buffer, width, height, bpp, format);
+
+    FILE* file = fopen(filename, "wb");
+    if (file) {
+        fwrite(rgb_buffer, width * height * bpp, 1, file);
+        fclose(file);
+    } else {
+        printf("Failed to open file %s for writing\n", filename);
+    }
+
+    // Free the allocated memory
+    free(rgb_buffer);
+}
+
+void dump_frame_to_disk_conditionally(std::uint8_t * const buffer, int width, int height, int bpp, int video_format) {
+	if (dump_frame_to_disk == false) return; // No dumping
+	if (dump_max_frames == 0) return; // No dumping
+	if (dump_max_frames > 0 and dump_counter >= dump_max_frames) return;
+	if (dump_counter % dump_frequency == 0) {
+		char base_filename[256];
+		snprintf(base_filename, sizeof(base_filename), "framebuffer_%04llu", static_cast<unsigned long long>(dump_counter) * dump_frequency);
+		save_framebuffer_to_file(base_filename, buffer, width, height, bpp, video_format);
+	}
+	if (dump_max_frames >= 0) dump_counter++;
+} 
+
+} // namespace
+
 #ifdef PICASSO96
 #include "picasso96.h"
 #include "picasso96_win.h"
@@ -2144,8 +2317,8 @@ void toggle_fullscreen(int monid, int mode)
 
 bool uae_fsvideo_renderframe(int monid, int mode, bool immediate)
 {
-	struct AmigaMonitor *mon = &AMonitors[monid];
-	struct amigadisplay *ad = &adisplays[monid];
+	struct AmigaMonitor *mon = &AMonitors[monid]; // to know if screen is Picasso or not
+	//struct amigadisplay *ad = &adisplays[monid]; // Not used?
 	struct vidbuf_description *avidinfo = &adisplays[0].gfxvidinfo;
 	// FIXME: immediate is a new parameter
 	// FIXME: mode is a new parameter
@@ -2325,6 +2498,8 @@ bool uae_fsvideo_renderframe(int monid, int mode, bool immediate)
 		// frame->limits.y = 22;
 		// frame->limits.w = 692;
 		// frame->limits.h = 540;
+
+       	        dump_frame_to_disk_conditionally(frame->buffer, frame->width, frame->height, g_amiga_video_bpp, g_amiga_video_format);
 
 		// fsemu_video_post_partial_frame(avidinfo->);
 		fsemu_video_post_frame(frame);

@@ -22,6 +22,7 @@
 #include "fsemu-videothread.h"
 #include "fsemu-window.h"
 #include "fsemu.h"
+#include "upscaler.h"
 
 int fsemu_video_log_level = FSEMU_LOG_LEVEL_INFO;
 
@@ -330,6 +331,12 @@ void fsemu_video_display(void)
     fsemu_frame_number_displayed = fsemu_frame_number_displaying;
 }
 
+static long long current_time_ms() {
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (long long)ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
+}
+
 void fsemu_video_post_frame(fsemu_video_frame_t *frame)
 {
     // FIXME: There is currently an issue with fast-forward; the queue will
@@ -353,6 +360,35 @@ void fsemu_video_post_frame(fsemu_video_frame_t *frame)
     frame->number = frame_number;
 
     g_async_queue_lock(fsemu_video_frame_queue);
+
+    // Allow frames to pass through every 10 ms and when queue is not too long
+    int length = g_async_queue_length_unlocked(fsemu_video_frame_queue);
+    int allow_pass = 0;
+    {
+        static long long last_time = 0;
+        long long nnow = current_time_ms();
+        if (last_time == 0) {
+            last_time = nnow;
+            allow_pass = 1;
+        } else {
+            long long delta = nnow - last_time;
+            if (delta >= 10) {
+                allow_pass = 1;
+                last_time = nnow;
+            }
+        }
+    }
+    if (allow_pass == 0) {
+        fsemu_video_finalize_and_free_frame(frame);
+        g_async_queue_unlock(fsemu_video_frame_queue);
+        return;
+    }
+    if (length >= 2) {
+        printf("Warning: render engine probably too slow\n");
+        fsemu_video_finalize_and_free_frame(frame);
+        g_async_queue_unlock(fsemu_video_frame_queue);
+        return;
+    }
 
     // if (fsemu_video.last_posted_frame > fsemu_video.last_retrieved_frame) {
 
@@ -381,6 +417,7 @@ void fsemu_video_post_frame(fsemu_video_frame_t *frame)
         g_list_free(keep);
         // fsemu_assert(frame);
 
+        // Also this code does frame skipping
         int from = MAX(last_skipped_frame, fsemu_video.last_retrieved_frame + 1);
         for (int i = from; i < frame->number; i++) {
             printf("SKIPPED FRAME %d\n", i);
