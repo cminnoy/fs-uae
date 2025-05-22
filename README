@@ -279,15 +279,19 @@ Some relevant links:
 
 This branch is a modification of the vanilla FS-UAE with the addition of an AI image upscaler for lores/laced images to make maximum use of the 752x576 frame buffer.
 In lo-resolution the emulator normally uses 2x2 framebuffer pixels to simulate one Amiga pixel.
+In hi-res this is 1x2 pixels (double the amount in horizontal plane).
+If laced is applied you get double the amount of available pixels in vertical direction.
 
 I trained some very simple models to upscale those lores, lores/laced or hires images to enhance the image resolution wise.
 The models are very basic, for the following reasons:
 -  The AI runtime engine is ONNX. I could not make it blend cleanly with the OpenGL render engine.
-   The Amiga framebuffer resides in CPU memory; this needs to be copied to the GPU.
-   To get good performance the output of the AI model should be fed directly to the OpenGL pipeline to avoid copying over the PCIe bus.
+   The Amiga framebuffer resides in CPU memory; thus needs to be copied to the GPU for upscaling.
+   To get good performance the output of the AI model should be fed directly to the OpenGL pipeline to avoid copying back to the CPU over the PCIe bus.
    On my system I see a 2ms delay just for the copy.
--  As the models need to run real-time, with above mentioned constrained, the training focussed more on enhancing edges in the images than
-   to enhance colour. As such, an A500 OCS image will not start looking like an A1200 AGA image :-(
+-  As the models need to run real-time, with above mentioned constrained, the training focussed more on enhancing edges in conv3 models. Conv5 models will do some basic colour enhancement as well.
+Don't expect an A500 OCS image to start looking like an A1200 AGA image.
+There is very little information in OCS images for the model to work with.
+AGA games have often more colour which is helpful for conv5 models to make a more plesant endresult.
 
 Developed and 'only' tested on:
 - AMD Threadripper Ryzen 1950X
@@ -295,8 +299,10 @@ Developed and 'only' tested on:
 - Ubuntu 24.01 LTS
 
 Models:
-- conv3: a very basic 3 layer convolution model with ReLU as activation function
-- conv3_heavy: same as conv3 but with more channels
+- conv3: a very basic 3 layer convolution model with ReLU as activation function; will do resolution enhancement only.
+- conv3_heavy: same as conv3 but with more channels.
+- conv5: a 5 layer convolution model with ReLU; will do resolution enhancement and some mild colour enhancement.
+- conv5_heavy: same as conv5 but with more channels.
 
 If you want to try the different models, change the load_model parameter in file src/fsuae/fsuae-main.c
 
