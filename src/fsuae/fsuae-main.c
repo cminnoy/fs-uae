@@ -2146,8 +2146,8 @@ int main(int argc, char *argv[])
 #endif
 
     // Load AI upscale model
-    load_model("upscaler/conv3_heavy.onnx");
-
+    load_model("upscaler/conv5_heavy.onnx");
+    // TODO add one inference round here, to warm up the GPU
 
     if (fsemu) {
         fsuae_inputport_init();
