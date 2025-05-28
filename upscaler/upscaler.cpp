@@ -34,6 +34,8 @@ std::vector<int64_t> g_output_shape;
 constexpr int kInputWidth = 752;
 constexpr int kInputHeight = 576;
 
+bool do_ai_upscale = true;
+
 } // namespace
 
 
@@ -173,10 +175,15 @@ void run_inference(const uint8_t* rgba, uint8_t* output_rgba, int limit_x, int l
 #ifdef WITH_TIMING
     auto start_inference = std::chrono::high_resolution_clock::now();
 #endif
+    bool do_inference = do_ai_upscale;
 
     // Add checks for rgba and output_rgba validity if necessary
     if (!g_session || !g_io_binding || !rgba || !output_rgba) {
         fprintf(stderr, "Model not loaded, IoBinding not created, or input/output buffers are null.\n");
+        do_inference = false;
+    }
+
+    if (!do_inference) {
         // Fallback: copy original RGBA data (Keep this fallback)
         if (rgba && output_rgba) {
             int start_y = std::max(0, limit_y);
@@ -196,12 +203,16 @@ void run_inference(const uint8_t* rgba, uint8_t* output_rgba, int limit_x, int l
         return;
     }
 
+    std::cout << "BEFORE BINDING" << std::endl;
+
     // --- Start of Direct Binding with IoBinding ---
 
     // Clear previous bindings (Line 243)
     ORT_CHECK_VOID(g_io_binding->ClearBoundInputs());
     ORT_CHECK_VOID(g_io_binding->ClearBoundOutputs());
 
+    std::cout << "AFTER BINDING" << std::endl;
+    
     // Memory allocator on CPU (assuming rgba and output_rgba are on CPU)
     Ort::MemoryInfo mem_info = Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemTypeDefault);
 
@@ -221,6 +232,8 @@ void run_inference(const uint8_t* rgba, uint8_t* output_rgba, int limit_x, int l
     ORT_CHECK_VOID(g_io_binding->BindOutput(g_output_names_ptr[0], output_tensor));
 
     // --- End of Direct Binding Setup ---
+
+    std::cout << "BEFORE RUN" << std::endl;
 
     // ONNX Runtime will use the buffers bound in g_io_binding
     try {
@@ -254,6 +267,14 @@ void run_inference(const uint8_t* rgba, uint8_t* output_rgba, int limit_x, int l
     std::chrono::duration<double, std::milli> duration_inference = stop_inference - start_inference;
     fprintf(stderr, "Inference time: %.2f ms\n", duration_inference.count());
 #endif
+}
+
+void allow_ai_upscale(bool flag) {
+    do_ai_upscale = flag;
+}
+
+bool ai_upscale_on() {
+    return do_ai_upscale;
 }
 
 } // extern "C"

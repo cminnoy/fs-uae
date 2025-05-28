@@ -12,6 +12,7 @@
 #include "fsemu-menu.h"
 #include "fsemu-savestate.h"
 #include "fsemu-util.h"
+#include "upscaler.h"
 
 int fsemu_mainmenu_log_level = FSEMU_LOG_LEVEL_INFO;
 
@@ -216,6 +217,16 @@ static fsemu_menu_t *fsemu_mainmenu_on_savestates(fsemu_menu_item_t *item)
 
     fsemu_menu_update(newmenu);
     return newmenu;
+}
+
+// ----------------------------------------------------------------------------
+// AI UPSCALER
+// ----------------------------------------------------------------------------
+
+static fsemu_menu_t *fsemu_mainmenu_on_ai(fsemu_menu_item_t *item)
+{
+    allow_ai_upscale(!ai_upscale_on());
+    return NULL;
 }
 
 // ----------------------------------------------------------------------------
@@ -737,18 +748,21 @@ static void fsemu_mainmenu_update_main(fsemu_menu_t *menu)
 {
     fsemu_menu_item_t *item;
     bool paused = fsemu_control_paused();
+
     item = fsemu_menu_get_item(menu, 1);
     if (paused) {
         fsemu_menu_item_set_title(item, _("Resume"));
     } else {
         fsemu_menu_item_set_title(item, _("Pause"));
     }
+
     item = fsemu_menu_get_item(menu, 2);
     if (fsemu_control_warp()) {
         fsemu_menu_item_set_title(item, _("Normal speed"));
     } else {
         fsemu_menu_item_set_title(item, _("Fast forward"));
     }
+
     // fsemu_menu_item_set_enabled(item, !paused);
 
     int item_index = 5;
@@ -810,6 +824,13 @@ static void fsemu_mainmenu_update_main(fsemu_menu_t *menu)
         }
         fsemu_menu_item_set_title(item, title);
         free(title);
+    }
+
+    item = fsemu_menu_get_item(menu, item_index + 3);
+    if (ai_upscale_on()) {
+        fsemu_menu_item_set_title(item, _("ENHANCE OFF"));
+    } else {
+        fsemu_menu_item_set_title(item, _("ENHANCE ON"));
     }
 }
 
@@ -898,6 +919,15 @@ static fsemu_menu_t *fsemu_mainmenu_create_menu(void)
     fsemu_menu_item_set_enabled(newitem,
                                 fsemu_control_soft_reset_allowed() ||
                                     fsemu_control_hard_reset_allowed());
+
+
+    newitem = fsemu_menu_item_new_heading_with_title(_("Artificial Intelligence"));
+    fsemu_menu_add_item(newmenu, newitem);
+
+    newitem = fsemu_menu_item_new(); // AI ON/OFF
+    fsemu_menu_add_item(newmenu, newitem);
+    fsemu_menu_item_set_enabled(newitem, true); // ASSUME AI IS INCLUDED IN SOURCE
+    fsemu_menu_item_on_activate(newitem, fsemu_mainmenu_on_ai);
 
     fsemu_menu_update(newmenu);
     return newmenu;
