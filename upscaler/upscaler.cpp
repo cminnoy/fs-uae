@@ -203,15 +203,11 @@ void run_inference(const uint8_t* rgba, uint8_t* output_rgba, int limit_x, int l
         return;
     }
 
-    std::cout << "BEFORE BINDING" << std::endl;
-
     // --- Start of Direct Binding with IoBinding ---
 
     // Clear previous bindings (Line 243)
     ORT_CHECK_VOID(g_io_binding->ClearBoundInputs());
     ORT_CHECK_VOID(g_io_binding->ClearBoundOutputs());
-
-    std::cout << "AFTER BINDING" << std::endl;
     
     // Memory allocator on CPU (assuming rgba and output_rgba are on CPU)
     Ort::MemoryInfo mem_info = Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemTypeDefault);
@@ -232,8 +228,6 @@ void run_inference(const uint8_t* rgba, uint8_t* output_rgba, int limit_x, int l
     ORT_CHECK_VOID(g_io_binding->BindOutput(g_output_names_ptr[0], output_tensor));
 
     // --- End of Direct Binding Setup ---
-
-    std::cout << "BEFORE RUN" << std::endl;
 
     // ONNX Runtime will use the buffers bound in g_io_binding
     try {
