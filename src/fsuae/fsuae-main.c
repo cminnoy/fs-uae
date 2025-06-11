@@ -2146,8 +2146,13 @@ int main(int argc, char *argv[])
 #endif
 
     // Load AI upscale model
-    load_model("upscaler/conv5_heavy.onnx");
-    // TODO add one inference round here, to warm up the GPU
+    load_model("upscaler/model.onnx");
+    {
+        // We do one inference round here, to setup the model and warm up the GPU
+        // The first round always takes way longer than all the rest
+        static uint8_t local_buffer[752 * 576 * 4];
+        run_inference(local_buffer, local_buffer, 0, 0, 752, 576);
+    } 
 
     if (fsemu) {
         fsuae_inputport_init();
