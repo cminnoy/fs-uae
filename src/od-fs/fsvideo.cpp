@@ -238,7 +238,7 @@ static struct {
 int max_uae_width = 3072;
 int max_uae_height = 2048;
 
-uae_u32 redc[3 * 256], grec[3 * 256], bluc[3 * 256];
+//uae_u32 redc[3 * 256], grec[3 * 256], bluc[3 * 256];
 
 uae_s32 tyhrgb[65536];
 uae_s32 tylrgb[65536];

@@ -7163,65 +7163,6 @@ void cfgfile_addcfgparam (TCHAR *line)
 	temp_lines = u;
 }
 
-#if 0
-static int cfgfile_handle_custom_event (TCHAR *custom, int mode)
-{
-	TCHAR option[CONFIG_BLEN], value[CONFIG_BLEN];
-	TCHAR option2[CONFIG_BLEN], value2[CONFIG_BLEN];
-	TCHAR *tmp, *p, *nextp;
-	struct zfile *configstore = NULL;
-	int cnt = 0, cnt_ok = 0;
-
-	if (!mode) {
-		TCHAR zero = 0;
-		configstore = zfile_fopen_empty ("configstore", 50000);
-		cfgfile_save_options (configstore, &currprefs, 0);
-		cfg_write (&zero, configstore);
-	}
-
-	nextp = NULL;
-	tmp = p = xcalloc (TCHAR, _tcslen (custom) + 2);
-	_tcscpy (tmp, custom);
-	while (p && *p) {
-		if (*p == '\"') {
-			TCHAR *p2;
-			p++;
-			p2 = p;
-			while (*p2 != '\"' && *p2 != 0)
-				p2++;
-			if (*p2 == '\"') {
-				*p2++ = 0;
-				nextp = p2 + 1;
-				if (*nextp == ' ')
-					nextp++;
-			}
-		}
-		if (cfgfile_separate_line (p, option, value)) {
-			cnt++;
-			if (mode) {
-				cfgfile_parse_option (&changed_prefs, option, value, 0);
-			} else {
-				zfile_fseek (configstore, 0, SEEK_SET);
-				for (;;) {
-					if (!getconfigstoreline (configstore, option2, value2))
-						break;
-					if (!_tcscmpi (option, option2) && !_tcscmpi (value, value2)) {
-						cnt_ok++;
-						break;
-					}
-				}
-			}
-		}
-		p = nextp;
-	}
-	xfree (tmp);
-	zfile_fclose (configstore);
-	if (cnt > 0 && cnt == cnt_ok)
-		return 1;
-	return 0;
-}
-#endif
-
 int cmdlineparser (const TCHAR *s, TCHAR *outp[], int max)
 {
 	int j, cnt = 0;

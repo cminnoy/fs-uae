@@ -234,7 +234,7 @@ extern uae_s32 tyhrgb[65536];
 extern uae_s32 tylrgb[65536];
 extern uae_s32 tcbrgb[65536];
 extern uae_s32 tcrrgb[65536];
-extern uae_u32 redc[3 * 256], grec[3 * 256], bluc[3 * 256];
+//extern uae_u32 redc[3 * 256], grec[3 * 256], bluc[3 * 256];
 
 static uae_u32 lowbits (int v, int shift, int lsize)
 {
@@ -338,11 +338,15 @@ void alloc_colors_picasso (int rw, int gw, int bw, int rs, int gs, int bs, int r
 #endif
 }
 
+/**
+ * Used for AGA color fill as well as for picasso gfx card
+ */
 void alloc_colors_rgb (int rw, int gw, int bw, int rs, int gs, int bs, int aw, int as, int alpha, int byte_swap,
 	uae_u32 *rc, uae_u32 *gc, uae_u32 *bc)
 {
 	int bpp = rw + gw + bw + aw;
 	int i;
+
 	for(i = 0; i < 256; i++) {
 		int j;
 
@@ -407,18 +411,6 @@ void alloc_colors64k(int monid, int rw, int gw, int bw, int rs, int gs, int bs, 
 	}
 #if defined(AGA) || defined(GFXFILTER)
 	alloc_colors_rgb (rw, gw, bw, rs, gs, bs, aw, as, alpha, byte_swap, xredcolors, xgreencolors, xbluecolors);
-	/* copy original color table */
-	for (i = 0; i < 256; i++) {
-		redc[0 * 256 + i] = xredcolors[0];
-		grec[0 * 256 + i] = xgreencolors[0];
-		bluc[0 * 256 + i] = xbluecolors[0];
-		redc[1 * 256 + i] = xredcolors[i];
-		grec[1 * 256 + i] = xgreencolors[i];
-		bluc[1 * 256 + i] = xbluecolors[i];
-		redc[2 * 256 + i] = xredcolors[255];
-		grec[2 * 256 + i] = xgreencolors[255];
-		bluc[2 * 256 + i] = xbluecolors[255];
-	}
 #ifdef GFXFILTER
 	if (yuv) {
 		/* create internal 5:6:5 color tables */
