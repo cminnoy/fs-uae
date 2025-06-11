@@ -50,7 +50,7 @@ static struct {
     // Number of frames rendered by the OpenGL video renderer.
     int frame_count;
 
-    bool fix_bleed;
+    bool fix_bleed; // Not 100% clear what this does, but there seems to be a fine line on the right and bottom of the screen if this is set to false
 
     GLint iformat;
     GLenum type;
@@ -154,7 +154,7 @@ static void fsemu_glvideo_handle_frame(fsemu_video_frame_t *frame)
     // }
     // last_time = nnow;
 
-    static uint8_t local_buffer[752 * 756 * 4];
+    static uint8_t local_buffer[752 * 576 * 4];
     run_inference(frame->buffer, local_buffer, frame->limits.x, frame->limits.y, frame->limits.w, frame->limits.h);
     frame->buffer = local_buffer;
 
