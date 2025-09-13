@@ -120,23 +120,52 @@ def map_ports(services: ServiceContainer):
         (fsemu.INPUTDEVICE_LEFTMOUSE, InputEvent.JOY1_FIRE_BUTTON),
         (fsemu.INPUTDEVICE_RIGHTMOUSE, InputEvent.JOY1_2ND_BUTTON),
     ]:
-        # fsemu_c.inputmode_map(joystick_port_0_mouse, trigger, action)
         joystick_port_0_mouse.map(trigger, action)
 
     for trigger, action in [
-        # MAP(UP, ACTION_JOYSTICK1_UP);
-        # MAP(RIGHT, ACTION_JOYSTICK1_RIGHT);
-        # MAP(DOWN, ACTION_JOYSTICK1_DOWN);
-        # MAP(LEFT, ACTION_JOYSTICK1_LEFT);
-        # MAP(RCTRL, ACTION_JOYSTICK1_FIRE);
-        # MAP(RALT, ACTION_JOYSTICK1_FIRE);
+        (fsemu.INPUTDEVICE_MOUSEYNEG, InputEvent.JOYPORT1_MOUSEYNEG),
+        (fsemu.INPUTDEVICE_MOUSEXPOS, InputEvent.JOYPORT1_MOUSEXPOS),
+        (fsemu.INPUTDEVICE_MOUSEYPOS, InputEvent.JOYPORT1_MOUSEYPOS),
+        (fsemu.INPUTDEVICE_MOUSEXNEG, InputEvent.JOYPORT1_MOUSEXNEG),
+        (fsemu.INPUTDEVICE_LEFTMOUSE, InputEvent.JOY2_FIRE_BUTTON),
+        (fsemu.INPUTDEVICE_RIGHTMOUSE, InputEvent.JOY2_2ND_BUTTON),
+    ]:
+        joystick_port_1_mouse.map(trigger, action)
+
+    # Macbooks and some laptops hasn't got right ctrl, so right alt is also mapped to the fire
+    # button.
+
+    # ??? Should be right trigger or right bumper?
+    # (fsemu.INPUTDEVICE_BUTTON_RIGHTSTICK, InputEvent.JOY2_FIRE_BUTTON),
+
+    for trigger, action in [
+        (fsemu.INPUTDEVICE_KEY_UP, InputEvent.JOY1_UP),
+        (fsemu.INPUTDEVICE_KEY_RIGHT, InputEvent.JOY1_RIGHT),
+        (fsemu.INPUTDEVICE_KEY_DOWN, InputEvent.JOY1_DOWN),
+        (fsemu.INPUTDEVICE_KEY_LEFT, InputEvent.JOY1_LEFT),
+        (fsemu.INPUTDEVICE_KEY_RCTRL, InputEvent.JOY1_FIRE_BUTTON),
+        (fsemu.INPUTDEVICE_KEY_RALT, InputEvent.JOY1_FIRE_BUTTON),
+        (fsemu.INPUTDEVICE_KEY_RSHIFT, InputEvent.JOY1_2ND_BUTTON),
+        (fsemu.INPUTDEVICE_BUTTON_DPAD_LEFT, InputEvent.JOY1_LEFT),
+        (fsemu.INPUTDEVICE_BUTTON_DPAD_RIGHT, InputEvent.JOY1_RIGHT),
+        (fsemu.INPUTDEVICE_BUTTON_DPAD_UP, InputEvent.JOY1_UP),
+        (fsemu.INPUTDEVICE_BUTTON_DPAD_DOWN, InputEvent.JOY1_DOWN),
+        (fsemu.INPUTDEVICE_LEFTXNEG, InputEvent.JOY1_LEFT),
+        (fsemu.INPUTDEVICE_LEFTXPOS, InputEvent.JOY1_RIGHT),
+        (fsemu.INPUTDEVICE_LEFTYNEG, InputEvent.JOY1_UP),
+        (fsemu.INPUTDEVICE_LEFTYPOS, InputEvent.JOY1_DOWN),
+        (fsemu.INPUTDEVICE_BUTTON_SOUTH, InputEvent.JOY1_FIRE_BUTTON),
+        (fsemu.INPUTDEVICE_BUTTON_EAST, InputEvent.JOY1_2ND_BUTTON),
+        (fsemu.INPUTDEVICE_BUTTON_WEST, InputEvent.JOY1_UP),
+    ]:
+        joystick_port_0_joystick.map(trigger, action)
+
+    for trigger, action in [
         (fsemu.INPUTDEVICE_KEY_UP, InputEvent.JOY2_UP),
         (fsemu.INPUTDEVICE_KEY_RIGHT, InputEvent.JOY2_RIGHT),
         (fsemu.INPUTDEVICE_KEY_DOWN, InputEvent.JOY2_DOWN),
         (fsemu.INPUTDEVICE_KEY_LEFT, InputEvent.JOY2_LEFT),
         (fsemu.INPUTDEVICE_KEY_RCTRL, InputEvent.JOY2_FIRE_BUTTON),
-        # (fsemu.INPUTDEVICE_KEY_RALT, InputEvent.JOY2_2ND_BUTTON),
-        # mac hasn't got right ctrl - FIXME...
         (fsemu.INPUTDEVICE_KEY_RALT, InputEvent.JOY2_FIRE_BUTTON),
         (fsemu.INPUTDEVICE_KEY_RSHIFT, InputEvent.JOY2_2ND_BUTTON),
         (fsemu.INPUTDEVICE_BUTTON_DPAD_LEFT, InputEvent.JOY2_LEFT),
@@ -148,43 +177,10 @@ def map_ports(services: ServiceContainer):
         (fsemu.INPUTDEVICE_LEFTYNEG, InputEvent.JOY2_UP),
         (fsemu.INPUTDEVICE_LEFTYPOS, InputEvent.JOY2_DOWN),
         (fsemu.INPUTDEVICE_BUTTON_SOUTH, InputEvent.JOY2_FIRE_BUTTON),
-        (fsemu.INPUTDEVICE_BUTTON_EAST, InputEvent.JOY2_UP),
-        # ??? Should be right trigger or right bumper?
-        # (fsemu.INPUTDEVICE_BUTTON_RIGHTSTICK, InputEvent.JOY2_FIRE_BUTTON),
+        (fsemu.INPUTDEVICE_BUTTON_EAST, InputEvent.JOY2_2ND_BUTTON),
+        (fsemu.INPUTDEVICE_BUTTON_WEST, InputEvent.JOY2_UP),
     ]:
-        # fsemu_c.inputmode_map(joystick_port_1_joystick, trigger, action)
         joystick_port_1_joystick.map(trigger, action)
-
-    # if (num == 1) {
-    #     MAP(DPUP, ACTION_MOUSE1_UP);
-    #     MAP(DPRIGHT, ACTION_MOUSE1_RIGHT);
-    #     MAP(DPDOWN, ACTION_MOUSE1_DOWN);
-    #     MAP(DPLEFT, ACTION_MOUSE1_LEFT);
-    #     MAP(BUTTON_A, ACTION_JOYSTICK1_FIRE);
-    #     MAP(BUTTON_B, ACTION_MOUSE1_UP);
-    #     // MAP(RIGHTSTICK, ACTION_MOUSE0_FIRE);
-
-    #     MAP(MOUSEYNEG, ACTION_MOUSE1_UP);
-    #     MAP(MOUSEXPOS, ACTION_MOUSE1_RIGHT);
-    #     MAP(MOUSEYPOS, ACTION_MOUSE1_DOWN);
-    #     MAP(MOUSEXNEG, ACTION_MOUSE1_LEFT);
-    #     MAP(LEFTMOUSE, ACTION_JOYSTICK1_FIRE);
-    #     MAP(RIGHTMOUSE, ACTION_JOYSTICK1_BUTTON2);
-    # } else {
-    #     MAP(DPUP, ACTION_MOUSE0_UP);
-    #     MAP(DPRIGHT, ACTION_MOUSE0_RIGHT);
-    #     MAP(DPDOWN, ACTION_MOUSE0_DOWN);
-    #     MAP(DPLEFT, ACTION_MOUSE0_LEFT);
-    #     MAP(BUTTON_A, ACTION_JOYSTICK0_FIRE);
-    #     MAP(BUTTON_B, ACTION_MOUSE0_UP);
-
-    #     MAP(MOUSEYNEG, ACTION_MOUSE0_UP);
-    #     MAP(MOUSEXPOS, ACTION_MOUSE0_RIGHT);
-    #     MAP(MOUSEYPOS, ACTION_MOUSE0_DOWN);
-    #     MAP(MOUSEXNEG, ACTION_MOUSE0_LEFT);
-    #     MAP(LEFTMOUSE, ACTION_JOYSTICK0_FIRE);
-    #     MAP(RIGHTMOUSE, ACTION_JOYSTICK0_BUTTON2);
-    # }
 
     # import fsemu_inputdevice  # type: ignore
 

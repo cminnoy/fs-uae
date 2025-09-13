@@ -1,3 +1,7 @@
+Version 5.0.8:
+
+* Also add joystick mappings for port 0 and mouse mappings for port 1.
+
 Version 5.0.7:
 
 * Correct pixel aspect (5:6) when displaying NTSC.
