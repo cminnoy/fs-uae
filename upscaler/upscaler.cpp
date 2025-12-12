@@ -89,11 +89,19 @@ bool load_model(const char* model_path) {
     // Enable profiling: Specify a prefix for the output file
     //g_session_options->EnableProfiling("onnxruntime_profile");
 
-    // Use OrtROCMProviderOptions struct directly
+#if 0
+    // OLD ROCm EP usage - kept for reference
     OrtROCMProviderOptions rocm_options{};
     rocm_options.device_id = 0; // Use device 0
     g_session_options->AppendExecutionProvider_ROCM(rocm_options);
     printf("ONNX Runtime session options configured with ROCm EP (device 0).\n");
+#else
+    // New MiGraphX EP usage
+    OrtMIGraphXProviderOptions migraphx_options{};
+    migraphx_options.device_id = 0; // Use device 0
+    g_session_options->AppendExecutionProvider_MIGraphX(migraphx_options);
+    printf("ONNX Runtime session options configured with MIGraphX EP (device 0).\n");
+#endif
 
     ORT_CHECK(g_session = new Ort::Session(*g_env, model_path, *g_session_options)); 
 
@@ -134,7 +142,6 @@ bool load_model(const char* model_path) {
         return false;
     }
 
-
     // Output
     Ort::AllocatedStringPtr output_name = g_session->GetOutputNameAllocated(0, allocator);
     g_output_names_str.emplace_back(output_name.get());
@@ -158,7 +165,6 @@ bool load_model(const char* model_path) {
         cleanup_model();
         return false;
     }
-
 
     fprintf(stdout, "Model loaded: input shape = {");
     for (size_t i = 0; i < g_input_shape.size(); ++i)
@@ -202,8 +208,6 @@ void run_inference(const uint8_t* rgba, uint8_t* output_rgba, int limit_x, int l
         }
         return;
     }
-
-    // --- Start of Direct Binding with IoBinding ---
 
     // Clear previous bindings (Line 243)
     ORT_CHECK_VOID(g_io_binding->ClearBoundInputs());

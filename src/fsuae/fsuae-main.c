@@ -1958,6 +1958,15 @@ int main(int argc, char *argv[])
     // must be called early, before fs_emu_init -affects video output
     fs_uae_configure_amiga_model();
 
+    // Load AI upscale model. First time can be very slow, as MiGraphX compiles to model and stores it in cache.
+    load_model("upscaler/model.onnx");
+
+    // Do one inference round here, to setup the model and warm up the GPU. The first round always takes way longer than all the rest.
+    {
+        static uint8_t local_buffer[752 * 576 * 4];
+        run_inference(local_buffer, local_buffer, 0, 0, 752, 576);
+    }
+
 #ifdef FSUAE_LEGACY
     const char *controllers_dir = fsuae_path_controllers_dir();
     if (controllers_dir) {
@@ -2144,15 +2153,6 @@ int main(int argc, char *argv[])
 #ifdef FSUAE_LEGACY
     fs_uae_configure_menu();
 #endif
-
-    // Load AI upscale model
-    load_model("upscaler/model.onnx");
-    {
-        // We do one inference round here, to setup the model and warm up the GPU
-        // The first round always takes way longer than all the rest
-        static uint8_t local_buffer[752 * 576 * 4];
-        run_inference(local_buffer, local_buffer, 0, 0, 752, 576);
-    } 
 
     if (fsemu) {
         fsuae_inputport_init();

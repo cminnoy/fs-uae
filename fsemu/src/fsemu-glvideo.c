@@ -154,10 +154,12 @@ static void fsemu_glvideo_handle_frame(fsemu_video_frame_t *frame)
     // }
     // last_time = nnow;
 
+    // AI Upscaling
     static uint8_t local_buffer[752 * 576 * 4];
     run_inference(frame->buffer, local_buffer, frame->limits.x, frame->limits.y, frame->limits.w, frame->limits.h);
     frame->buffer = local_buffer;
 
+    // Adjust buffer pointer and dimensions to match limits
     frame->buffer += (frame->limits.y * frame->stride) +
                      frame->limits.x * fsemu_glvideo.bpp;
     frame->width = frame->limits.w;
